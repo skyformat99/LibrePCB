@@ -111,7 +111,7 @@ void FootprintPreviewGraphicsItem::updateCacheAndRepaint() noexcept
 
     // texts
     mCachedTextProperties.clear();
-    for (const Text& text : mFootprint.getTexts()) {
+    for (const StrokeText& text : mFootprint.getTexts()) {
         // create static text properties
         CachedTextProperties_t props;
 
@@ -239,7 +239,7 @@ void FootprintPreviewGraphicsItem::paint(QPainter* painter, const QStyleOptionGr
     }
 
     // draw all texts
-    for (const Text& text : mFootprint.getTexts()) {
+    for (const StrokeText& text : mFootprint.getTexts()) {
         // get layer
         layer = mLayerProvider.getLayer(text.getLayerName()); if (!layer) continue;
 

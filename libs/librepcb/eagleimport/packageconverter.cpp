@@ -123,8 +123,9 @@ std::unique_ptr<library::Package> PackageConverter::generate() const
         Point pos = Point::fromMm(text.getPosition().x, text.getPosition().y);
         Angle rot = Angle::fromDeg(text.getRotation().getAngle());
         Alignment align(HAlign::left(), VAlign::bottom());
-        footprint->getTexts().append(std::make_shared<Text>(
-            Uuid::createRandom(), layerName, textStr, pos, rot, height, align));
+        footprint->getTexts().append(std::make_shared<StrokeText>(
+            Uuid::createRandom(), layerName, textStr, pos, rot, height,
+            Ratio::percent100() / 10, Ratio::percent100(), align, false));
     }
 
     foreach (const parseagle::Hole& hole, mPackage.getHoles()) {

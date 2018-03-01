@@ -31,7 +31,7 @@
 #include <librepcb/common/fileio/cmd/cmdlistelementsswap.h>
 #include <librepcb/common/geometry/polygon.h>
 #include <librepcb/common/geometry/ellipse.h>
-#include <librepcb/common/geometry/text.h>
+#include <librepcb/common/geometry/stroketext.h>
 #include <librepcb/common/geometry/hole.h>
 #include "footprintpad.h"
 
@@ -58,7 +58,7 @@ class FootprintGraphicsItem;
  */
 class Footprint final : public SerializableObject, private FootprintPadList::IF_Observer,
                         private PolygonList::IF_Observer, private EllipseList::IF_Observer,
-                        private TextList::IF_Observer, private HoleList::IF_Observer
+                        private StrokeTextList::IF_Observer, private HoleList::IF_Observer
 {
         Q_DECLARE_TR_FUNCTIONS(Footprint)
 
@@ -86,8 +86,8 @@ class Footprint final : public SerializableObject, private FootprintPadList::IF_
         PolygonList& getPolygons() noexcept {return mPolygons;}
         const EllipseList& getEllipses() const noexcept {return mEllipses;}
         EllipseList& getEllipses() noexcept {return mEllipses;}
-        const TextList& getTexts() const noexcept {return mTexts;}
-        TextList& getTexts() noexcept {return mTexts;}
+        const StrokeTextList& getTexts() const noexcept {return mTexts;}
+        StrokeTextList& getTexts() noexcept {return mTexts;}
         const HoleList& getHoles() const noexcept {return mHoles;}
         HoleList& getHoles() noexcept {return mHoles;}
 
@@ -114,8 +114,8 @@ class Footprint final : public SerializableObject, private FootprintPadList::IF_
                              const std::shared_ptr<Polygon>& ptr) noexcept override;
         void listObjectAdded(const EllipseList& list, int newIndex,
                              const std::shared_ptr<Ellipse>& ptr) noexcept override;
-        void listObjectAdded(const TextList& list, int newIndex,
-                             const std::shared_ptr<Text>& ptr) noexcept override;
+        void listObjectAdded(const StrokeTextList& list, int newIndex,
+                             const std::shared_ptr<StrokeText>& ptr) noexcept override;
         void listObjectAdded(const HoleList& list, int newIndex,
                              const std::shared_ptr<Hole>& ptr) noexcept override;
         void listObjectRemoved(const FootprintPadList& list, int oldIndex,
@@ -124,8 +124,8 @@ class Footprint final : public SerializableObject, private FootprintPadList::IF_
                                const std::shared_ptr<Polygon>& ptr) noexcept override;
         void listObjectRemoved(const EllipseList& list, int oldIndex,
                                const std::shared_ptr<Ellipse>& ptr) noexcept override;
-        void listObjectRemoved(const TextList& list, int oldIndex,
-                               const std::shared_ptr<Text>& ptr) noexcept override;
+        void listObjectRemoved(const StrokeTextList& list, int oldIndex,
+                               const std::shared_ptr<StrokeText>& ptr) noexcept override;
         void listObjectRemoved(const HoleList& list, int oldIndex,
                                const std::shared_ptr<Hole>& ptr) noexcept override;
 
@@ -137,7 +137,7 @@ class Footprint final : public SerializableObject, private FootprintPadList::IF_
         FootprintPadList mPads;
         PolygonList mPolygons;
         EllipseList mEllipses;
-        TextList mTexts;
+        StrokeTextList mTexts;
         HoleList mHoles;
 
         FootprintGraphicsItem* mRegisteredGraphicsItem;

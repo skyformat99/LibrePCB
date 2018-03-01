@@ -25,9 +25,9 @@
 #include <librepcb/common/graphics/graphicsview.h>
 #include <librepcb/common/graphics/graphicsscene.h>
 #include <librepcb/common/graphics/graphicslayer.h>
-#include <librepcb/common/graphics/textgraphicsitem.h>
-#include <librepcb/common/geometry/text.h>
-#include <librepcb/common/geometry/cmd/cmdtextedit.h>
+#include <librepcb/common/graphics/stroketextgraphicsitem.h>
+#include <librepcb/common/geometry/stroketext.h>
+#include <librepcb/common/geometry/cmd/cmdstroketextedit.h>
 #include <librepcb/common/widgets/graphicslayercombobox.h>
 #include <librepcb/library/pkg/footprint.h>
 #include <librepcb/library/pkg/footprintgraphicsitem.h>
@@ -179,12 +179,13 @@ bool PackageEditorState_DrawTextBase::startAddText(const Point& pos) noexcept
     try {
         mStartPos = pos;
         mContext.undoStack.beginCmdGroup(tr("Add footprint text"));
-        mCurrentText = new Text(Uuid::createRandom(), mLastLayerName, mLastText, pos,
-                                mLastRotation, mLastHeight,
-                                Alignment(HAlign::left(), VAlign::bottom()));
+        mCurrentText = new StrokeText(Uuid::createRandom(), mLastLayerName, mLastText, pos,
+            mLastRotation, mLastHeight, Ratio::percent100() / 10, Ratio::percent100(),
+            Alignment(HAlign::left(), VAlign::bottom()), false);
         mContext.undoStack.appendToCmdGroup(
-            new CmdTextInsert(mContext.currentFootprint->getTexts(), std::shared_ptr<Text>(mCurrentText)));
-        mEditCmd.reset(new CmdTextEdit(*mCurrentText));
+            new CmdStrokeTextInsert(mContext.currentFootprint->getTexts(),
+                                    std::shared_ptr<StrokeText>(mCurrentText)));
+        mEditCmd.reset(new CmdStrokeTextEdit(*mCurrentText));
         mCurrentGraphicsItem = mContext.currentGraphicsItem->getTextGraphicsItem(*mCurrentText);
         Q_ASSERT(mCurrentGraphicsItem);
         mCurrentGraphicsItem->setSelected(true);

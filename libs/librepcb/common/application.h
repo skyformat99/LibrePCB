@@ -33,6 +33,8 @@
  ****************************************************************************************/
 namespace librepcb {
 
+class StrokeFont;
+
 /*****************************************************************************************
  *  Macros
  ****************************************************************************************/
@@ -70,6 +72,7 @@ class Application final : public QApplication
         const Version& getFileFormatVersion() const noexcept {return mFileFormatVersion;}
         const FilePath& getResourcesDir() const noexcept {return mResourcesDir;}
         FilePath getResourcesFilePath(const QString& filepath) const noexcept;
+        StrokeFont& getStrokeFont() const;
 
         // Reimplemented from QApplication
         bool notify(QObject* receiver, QEvent* e);
@@ -86,6 +89,7 @@ class Application final : public QApplication
         QString mGitVersion;
         Version mFileFormatVersion;
         FilePath mResourcesDir;
+        mutable QScopedPointer<StrokeFont> mStrokeFont; // the stroke font used on all PCBs
 };
 
 /*****************************************************************************************

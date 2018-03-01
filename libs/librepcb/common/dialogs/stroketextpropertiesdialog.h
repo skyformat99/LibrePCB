@@ -17,81 +17,69 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef LIBREPCB_PROJECT_CMDMOVESELECTEDBOARDITEMS_H
-#define LIBREPCB_PROJECT_CMDMOVESELECTEDBOARDITEMS_H
+#ifndef LIBREPCB_STROKETEXTPROPERTIESDIALOG_H
+#define LIBREPCB_STROKETEXTPROPERTIESDIALOG_H
 
 /*****************************************************************************************
  *  Includes
  ****************************************************************************************/
 #include <QtCore>
-#include <librepcb/common/undocommandgroup.h>
-#include <librepcb/common/units/all_length_units.h>
+#include <QtWidgets>
 
 /*****************************************************************************************
  *  Namespace / Forward Declarations
  ****************************************************************************************/
 namespace librepcb {
 
-class CmdPolygonEdit;
-class CmdStrokeTextEdit;
+class UndoStack;
+class StrokeText;
+class GraphicsLayer;
 
-namespace project {
-
-class Board;
-class CmdDeviceInstanceEdit;
-class CmdBoardViaEdit;
-class CmdBoardNetPointEdit;
-class CmdBoardPlaneEdit;
-
-namespace editor {
+namespace Ui {
+class StrokeTextPropertiesDialog;
+}
 
 /*****************************************************************************************
- *  Class CmdMoveSelectedBoardItems
+ *  Class StrokeTextPropertiesDialog
  ****************************************************************************************/
 
 /**
- * @brief The CmdMoveSelectedBoardItems class
+ * @brief The StrokeTextPropertiesDialog class
  */
-class CmdMoveSelectedBoardItems final : public UndoCommandGroup
+class StrokeTextPropertiesDialog final : public QDialog
 {
+        Q_OBJECT
+
     public:
 
         // Constructors / Destructor
-        CmdMoveSelectedBoardItems(Board& board, const Point& startPos) noexcept;
-        ~CmdMoveSelectedBoardItems() noexcept;
+        StrokeTextPropertiesDialog() = delete;
+        StrokeTextPropertiesDialog(const StrokeTextPropertiesDialog& other) = delete;
+        StrokeTextPropertiesDialog(StrokeText& text, UndoStack& undoStack,
+                                   QList<GraphicsLayer*> layers, QWidget* parent = nullptr) noexcept;
+        ~StrokeTextPropertiesDialog() noexcept;
 
-        // General Methods
-        void setCurrentPosition(const Point& pos) noexcept;
-
-
-    private:
-
-        // Private Methods
-
-        /// @copydoc UndoCommand::performExecute()
-        bool performExecute() override;
+        // Operator Overloadings
+        StrokeTextPropertiesDialog& operator=(const StrokeTextPropertiesDialog& rhs) = delete;
 
 
-        // Private Member Variables
-        Board& mBoard;
-        Point mStartPos;
-        Point mDeltaPos;
+    private: // Methods
+        void on_buttonBox_clicked(QAbstractButton *button);
+        bool applyChanges() noexcept;
+        void addLayersToCombobox(const QList<QString>& names) noexcept;
+        void selectLayerNameInCombobox(const QString& name) noexcept;
 
-        // Move commands
-        QList<CmdDeviceInstanceEdit*> mDeviceEditCmds;
-        QList<CmdBoardViaEdit*> mViaEditCmds;
-        QList<CmdBoardNetPointEdit*> mNetPointEditCmds;
-        QList<CmdBoardPlaneEdit*> mPlaneEditCmds;
-        QList<CmdPolygonEdit*> mPolygonEditCmds;
-        QList<CmdStrokeTextEdit*> mStrokeTextEditCmds;
+
+    private: // Data
+        StrokeText& mText;
+        UndoStack& mUndoStack;
+        QScopedPointer<Ui::StrokeTextPropertiesDialog> mUi;
 };
 
 /*****************************************************************************************
  *  End of File
  ****************************************************************************************/
 
-} // namespace editor
-} // namespace project
 } // namespace librepcb
 
-#endif // LIBREPCB_PROJECT_CMDMOVESELECTEDBOARDITEMS_H
+#endif // LIBREPCB_STROKETEXTPROPERTIESDIALOG_H

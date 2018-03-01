@@ -31,6 +31,7 @@
 #include "../items/bi_device.h"
 #include "../boardlayerstack.h"
 #include <librepcb/common/attributes/attributesubstitutor.h>
+#include <librepcb/common/graphics/stroketextgraphicsitem.h>
 
 /*****************************************************************************************
  *  Namespace
@@ -45,11 +46,15 @@ namespace project {
 BGI_Footprint::BGI_Footprint(BI_Footprint& footprint) noexcept :
     BGI_Base(), mFootprint(footprint), mLibFootprint(footprint.getLibFootprint())
 {
-    mFont.setStyleStrategy(QFont::StyleStrategy(QFont::OpenGLCompatible | QFont::PreferQuality));
-    mFont.setStyleHint(QFont::SansSerif);
-    mFont.setFamily("Nimbus Sans L");
-
     updateCacheAndRepaint();
+
+    // texts
+    for (const StrokeText& text : mLibFootprint.getTexts()) {
+        //QString str = AttributeSubstitutor::substitute(text.getText(), &mFootprint);
+        StrokeTextGraphicsItem* item = new StrokeTextGraphicsItem(
+            const_cast<StrokeText&>(text), mFootprint.getDeviceInstance(), this);
+        Q_UNUSED(item);
+    }
 }
 
 BGI_Footprint::~BGI_Footprint() noexcept
@@ -109,57 +114,6 @@ void BGI_Footprint::updateCacheAndRepaint() noexcept
         if (!layer) continue;
         if (!layer->isVisible()) continue;
         mShape = mShape.united(polygonPath);
-    }
-
-    // texts
-    mCachedTextProperties.clear();
-    for (const Text& text : mLibFootprint.getTexts()) {
-        layer = getLayer(text.getLayerName());
-        if (!layer) continue;
-        if (!layer->isVisible()) continue;
-
-        // create static text properties
-        CachedTextProperties_t props;
-
-        // get the text to display
-        props.text = AttributeSubstitutor::substitute(text.getText(), &mFootprint);
-
-        // calculate font metrics
-        props.fontPixelSize = qCeil(text.getHeight().toPx());
-        mFont.setPixelSize(props.fontPixelSize);
-        QFontMetricsF metrics(mFont);
-        props.scaleFactor = text.getHeight().toPx() / metrics.height();
-        props.textRect = metrics.boundingRect(QRectF(), text.getAlign().toQtAlign() |
-                                              Qt::TextDontClip, props.text);
-        QRectF scaledTextRect = QRectF(props.textRect.topLeft() * props.scaleFactor,
-                                       props.textRect.bottomRight() * props.scaleFactor);
-
-        // check rotation
-        Angle absAngle = text.getRotation() + mFootprint.getRotation();
-        absAngle.mapTo180deg();
-        props.rotate180 = (absAngle <= -Angle::deg90() || absAngle > Angle::deg90());
-
-        // calculate text position
-        scaledTextRect.translate(text.getPosition().toPxQPointF());
-
-        // text alignment
-        if (props.rotate180)
-            props.flags = text.getAlign().mirrored().toQtAlign();
-        else
-            props.flags = text.getAlign().toQtAlign();
-
-        // calculate text bounding rect
-        mBoundingRect = mBoundingRect.united(scaledTextRect);
-        props.textRect = QRectF(scaledTextRect.topLeft() / props.scaleFactor,
-                                scaledTextRect.bottomRight() / props.scaleFactor);
-        if (props.rotate180)
-        {
-            props.textRect = QRectF(-props.textRect.x(), -props.textRect.y(),
-                                    -props.textRect.width(), -props.textRect.height()).normalized();
-        }
-
-        // save properties
-        mCachedTextProperties.insert(&text, props);
     }
 
     if (!mShape.isEmpty())
@@ -251,50 +205,6 @@ void BGI_Footprint::paint(QPainter* painter, const QStyleOptionGraphicsItem* opt
         // TODO: rotation
     }
 
-    // draw all texts
-    for (const Text& text : mLibFootprint.getTexts()) {
-        // get layer
-        layer = getLayer(text.getLayerName());
-        if (!layer) continue;
-        if (!layer->isVisible()) continue;
-
-        // get cached text properties
-        const CachedTextProperties_t& props = mCachedTextProperties.value(&text);
-        mFont.setPixelSize(props.fontPixelSize);
-
-        // draw text or rect
-        painter->save();
-        painter->translate(text.getPosition().toPxQPointF());
-        painter->rotate(-text.getRotation().toDeg());
-        painter->translate(-text.getPosition().toPxQPointF());
-        painter->scale(props.scaleFactor, props.scaleFactor);
-        if (props.rotate180) painter->rotate(180);
-        if ((deviceIsPrinter) || (lod * text.getHeight().toPx() > 8))
-        {
-            // draw text
-            painter->setPen(QPen(layer->getColor(selected), 0));
-            painter->setFont(mFont);
-            painter->drawText(props.textRect, props.flags, props.text);
-        }
-        else
-        {
-            // fill rect
-            painter->fillRect(props.textRect, QBrush(layer->getColor(selected), Qt::Dense5Pattern));
-        }
-#ifdef QT_DEBUG
-        layer = getLayer(GraphicsLayer::sDebugGraphicsItemsTextsBoundingRects);
-        if (layer) {
-            if (layer->isVisible()) {
-                // draw text bounding rect
-                painter->setPen(QPen(layer->getColor(selected), 0));
-                painter->setBrush(Qt::NoBrush);
-                painter->drawRect(props.textRect);
-            }
-        }
-#endif
-        painter->restore();
-    }
-
     // draw all holes
     for (const Hole& hole : mLibFootprint.getHoles()) {
         // get layer
@@ -339,10 +249,9 @@ void BGI_Footprint::paint(QPainter* painter, const QStyleOptionGraphicsItem* opt
  *  Private Methods
  ****************************************************************************************/
 
-GraphicsLayer* BGI_Footprint::getLayer(QString name) const noexcept
+GraphicsLayer* BGI_Footprint::getLayer(const QString& name) const noexcept
 {
-    if (mFootprint.getIsMirrored()) name = GraphicsLayer::getMirroredLayerName(name);
-    return mFootprint.getDeviceInstance().getBoard().getLayerStack().getLayer(name);
+    return mFootprint.getDeviceInstance().getLayer(name);
 }
 
 /*****************************************************************************************

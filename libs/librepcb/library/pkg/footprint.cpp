@@ -67,6 +67,11 @@ Footprint::Footprint(const SExpression& node) :
     mEllipses.loadFromDomElement(node);
     mTexts.loadFromDomElement(node);
     mHoles.loadFromDomElement(node);
+
+    // backward compatibility, remove this some time!
+    foreach (const SExpression& child, node.getChildren("text")) {
+        mTexts.append(std::make_shared<StrokeText>(child));
+    }
 }
 
 Footprint::~Footprint() noexcept
@@ -160,8 +165,8 @@ void Footprint::listObjectAdded(const EllipseList& list, int newIndex,
     if (mRegisteredGraphicsItem) mRegisteredGraphicsItem->addEllipse(*ptr);
 }
 
-void Footprint::listObjectAdded(const TextList& list, int newIndex,
-                                const std::shared_ptr<Text>& ptr) noexcept
+void Footprint::listObjectAdded(const StrokeTextList& list, int newIndex,
+                                const std::shared_ptr<StrokeText>& ptr) noexcept
 {
     Q_UNUSED(newIndex);
     Q_ASSERT(&list == &mTexts);
@@ -200,8 +205,8 @@ void Footprint::listObjectRemoved(const EllipseList& list, int oldIndex,
     if (mRegisteredGraphicsItem) mRegisteredGraphicsItem->removeEllipse(*ptr);
 }
 
-void Footprint::listObjectRemoved(const TextList& list, int oldIndex,
-                                  const std::shared_ptr<Text>& ptr) noexcept
+void Footprint::listObjectRemoved(const StrokeTextList& list, int oldIndex,
+                                  const std::shared_ptr<StrokeText>& ptr) noexcept
 {
     Q_UNUSED(oldIndex);
     Q_ASSERT(&list == &mTexts);

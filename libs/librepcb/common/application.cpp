@@ -23,6 +23,7 @@
 #include <QtCore>
 #include "application.h"
 #include "exceptions.h"
+#include "font/strokefont.h"
 #include "units/all_length_units.h"
 
 /*****************************************************************************************
@@ -80,6 +81,14 @@ Application::~Application() noexcept
 FilePath Application::getResourcesFilePath(const QString& filepath) const noexcept
 {
     return mResourcesDir.getPathTo(filepath);
+}
+
+StrokeFont& Application::getStrokeFont() const
+{
+    if (!mStrokeFont) {
+        mStrokeFont.reset(new StrokeFont(getResourcesFilePath("fontobene/librepcb.bene")));
+    }
+    return *mStrokeFont;
 }
 
 /*****************************************************************************************

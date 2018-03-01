@@ -44,6 +44,7 @@
 #include "items/bi_netpoint.h"
 #include "items/bi_netline.h"
 #include "items/bi_polygon.h"
+#include "items/bi_stroketext.h"
 #include "items/bi_plane.h"
 #include <librepcb/library/cmp/component.h>
 #include "items/bi_polygon.h"
@@ -117,6 +118,12 @@ Board::Board(const Board& other, const FilePath& filepath, const QString& name) 
             mPolygons.append(copy);
         }
 
+        // copy stroke texts
+        foreach (const BI_StrokeText* text, other.mStrokeTexts) {
+            BI_StrokeText* copy = new BI_StrokeText(*this, *text);
+            mStrokeTexts.append(copy);
+        }
+
         // rebuildAllPlanes(); --> fragments are copied too, so no need to rebuild them
         updateErcMessages();
         updateIcon();
@@ -133,6 +140,7 @@ Board::Board(const Board& other, const FilePath& filepath, const QString& name) 
     {
         // free the allocated memory in the reverse order of their allocation...
         qDeleteAll(mErcMsgListUnplacedComponentInstances);    mErcMsgListUnplacedComponentInstances.clear();
+        qDeleteAll(mStrokeTexts);       mStrokeTexts.clear();
         qDeleteAll(mPolygons);          mPolygons.clear();
         qDeleteAll(mPlanes);            mPlanes.clear();
         qDeleteAll(mNetSegments);       mNetSegments.clear();
@@ -241,6 +249,12 @@ Board::Board(Project& project, const FilePath& filepath, bool restore,
                 BI_Polygon* polygon = new BI_Polygon(*this, node);
                 mPolygons.append(polygon);
             }
+
+            // Load all stroke texts
+            foreach (const SExpression& node, root.getChildren("stroke_text")) {
+                BI_StrokeText* text = new BI_StrokeText(*this, node);
+                mStrokeTexts.append(text);
+            }
         }
 
         rebuildAllPlanes();
@@ -259,6 +273,7 @@ Board::Board(Project& project, const FilePath& filepath, bool restore,
     {
         // free the allocated memory in the reverse order of their allocation...
         qDeleteAll(mErcMsgListUnplacedComponentInstances);    mErcMsgListUnplacedComponentInstances.clear();
+        qDeleteAll(mStrokeTexts);       mStrokeTexts.clear();
         qDeleteAll(mPolygons);          mPolygons.clear();
         qDeleteAll(mPlanes);            mPlanes.clear();
         qDeleteAll(mNetSegments);       mNetSegments.clear();
@@ -280,6 +295,7 @@ Board::~Board() noexcept
     qDeleteAll(mErcMsgListUnplacedComponentInstances);    mErcMsgListUnplacedComponentInstances.clear();
 
     // delete all items
+    qDeleteAll(mStrokeTexts);       mStrokeTexts.clear();
     qDeleteAll(mPolygons);          mPolygons.clear();
     qDeleteAll(mPlanes);            mPlanes.clear();
     qDeleteAll(mNetSegments);       mNetSegments.clear();
@@ -299,7 +315,11 @@ Board::~Board() noexcept
 
 bool Board::isEmpty() const noexcept
 {
-    return (mDeviceInstances.isEmpty() && mNetSegments.isEmpty() && mPlanes.isEmpty());
+    return (mDeviceInstances.isEmpty() &&
+            mNetSegments.isEmpty() &&
+            mPlanes.isEmpty() &&
+            mPolygons.isEmpty() &&
+            mStrokeTexts.isEmpty());
 }
 
 QList<BI_Base*> Board::getItemsAtScenePos(const Point& pos) const noexcept
@@ -349,6 +369,12 @@ QList<BI_Base*> Board::getItemsAtScenePos(const Point& pos) const noexcept
     foreach (BI_Polygon* polygon, mPolygons) {
         if (polygon->isSelectable() && polygon->getGrabAreaScenePx().contains(scenePosPx)) {
             list.append(polygon);
+        }
+    }
+    // texts
+    foreach (BI_StrokeText* text, mStrokeTexts) {
+        if (text->isSelectable() && text->getGrabAreaScenePx().contains(scenePosPx)) {
+            list.append(text);
         }
     }
     return list;
@@ -419,6 +445,8 @@ QList<BI_Base*> Board::getAllItems() const noexcept
         items.append(plane);
     foreach (BI_Polygon* polygon, mPolygons)
         items.append(polygon);
+    foreach (BI_StrokeText* text, mStrokeTexts)
+        items.append(text);
     return items;
 }
 
@@ -571,6 +599,30 @@ void Board::removePolygon(BI_Polygon& polygon)
 }
 
 /*****************************************************************************************
+ *  StrokeText Methods
+ ****************************************************************************************/
+
+void Board::addStrokeText(BI_StrokeText& text)
+{
+    if ((!mIsAddedToProject) || (mStrokeTexts.contains(&text))
+        || (&text.getBoard() != this))
+    {
+        throw LogicError(__FILE__, __LINE__);
+    }
+    text.addToBoard(); // can throw
+    mStrokeTexts.append(&text);
+}
+
+void Board::removeStrokeText(BI_StrokeText& text)
+{
+    if ((!mIsAddedToProject) || (!mStrokeTexts.contains(&text))) {
+        throw LogicError(__FILE__, __LINE__);
+    }
+    text.removeFromBoard(); // can throw
+    mStrokeTexts.removeOne(&text);
+}
+
+/*****************************************************************************************
  *  General Methods
  ****************************************************************************************/
 
@@ -669,6 +721,10 @@ void Board::setSelectionRect(const Point& p1, const Point& p2, bool updateItems)
             bool select = polygon->isSelectable() && polygon->getGrabAreaScenePx().intersects(rectPx);
             polygon->setSelected(select);
         }
+        foreach (BI_StrokeText* text, mStrokeTexts) {
+            bool select = text->isSelectable() && text->getGrabAreaScenePx().intersects(rectPx);
+            text->setSelected(select);
+        }
     }
 }
 
@@ -685,13 +741,16 @@ void Board::clearSelection() const noexcept
     foreach (BI_Polygon* polygon, mPolygons) {
         polygon->setSelected(false);
     }
+    foreach (BI_StrokeText* text, mStrokeTexts) {
+        text->setSelected(false);
+    }
 }
 
 std::unique_ptr<BoardSelectionQuery> Board::createSelectionQuery() const noexcept
 {
     return std::unique_ptr<BoardSelectionQuery>(
         new BoardSelectionQuery(mDeviceInstances, mNetSegments, mPlanes, mPolygons,
-                                const_cast<Board*>(this)));
+                                mStrokeTexts, const_cast<Board*>(this)));
 }
 
 /*****************************************************************************************
@@ -752,6 +811,8 @@ void Board::serialize(SExpression& root) const
     serializePointerContainer(root, mPlanes, "plane");
     root.appendLineBreak();
     serializePointerContainer(root, mPolygons, "polygon");
+    root.appendLineBreak();
+    serializePointerContainer(root, mStrokeTexts, "stroke_text");
     root.appendLineBreak();
 }
 

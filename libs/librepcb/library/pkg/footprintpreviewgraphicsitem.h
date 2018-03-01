@@ -33,7 +33,7 @@
  ****************************************************************************************/
 namespace librepcb {
 
-class Text;
+class StrokeText;
 class GraphicsLayer;
 class IF_GraphicsLayerProvider;
 
@@ -122,7 +122,7 @@ class FootprintPreviewGraphicsItem final : public QGraphicsItem, public Attribut
         // Cached Attributes
         QRectF mBoundingRect;
         QPainterPath mShape;
-        QHash<const Text*, CachedTextProperties_t> mCachedTextProperties;
+        QHash<const StrokeText*, CachedTextProperties_t> mCachedTextProperties;
 };
 
 /*****************************************************************************************

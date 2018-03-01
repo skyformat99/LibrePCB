@@ -30,6 +30,7 @@
 #include "../../erc/ercmsg.h"
 #include "../../circuit/circuit.h"
 #include "../../circuit/componentinstance.h"
+#include "../boardlayerstack.h"
 #include "bi_footprint.h"
 #include <librepcb/common/scopeguard.h>
 
@@ -289,6 +290,24 @@ void BI_Device::setSelected(bool selected) noexcept
 {
     BI_Base::setSelected(selected);
     mFootprint->setSelected(selected);
+}
+
+/*****************************************************************************************
+ *  Inherited from IF_GraphicsLayerProvider
+ ****************************************************************************************/
+
+GraphicsLayer* BI_Device::getLayer(const QString& name) const noexcept
+{
+    if (mIsMirrored) {
+        return mBoard.getLayerStack().getLayer(GraphicsLayer::getMirroredLayerName(name));
+    } else {
+        return mBoard.getLayerStack().getLayer(name);
+    }
+}
+
+QList<GraphicsLayer*> BI_Device::getAllLayers() const noexcept
+{
+    return mBoard.getLayerStack().getAllLayers();
 }
 
 /*****************************************************************************************

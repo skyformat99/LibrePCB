@@ -28,6 +28,7 @@
 #include <librepcb/common/uuid.h>
 #include <librepcb/common/attributes/attribute.h>
 #include <librepcb/common/attributes/attributeprovider.h>
+#include <librepcb/common/graphics/graphicslayer.h>
 #include "../../erc/if_ercmsgprovider.h"
 #include <librepcb/common/fileio/serializableobject.h>
 #include "../graphicsitems/bgi_footprint.h"
@@ -58,7 +59,8 @@ class BI_Footprint;
  * @brief The BI_Device class
  */
 class BI_Device final : public BI_Base, public AttributeProvider,
-                        public IF_ErcMsgProvider, public SerializableObject
+                        public IF_ErcMsgProvider, public IF_GraphicsLayerProvider,
+                        public SerializableObject
 {
         Q_OBJECT
         DECLARE_ERC_MSG_CLASS_NAME(BI_Device)
@@ -112,6 +114,10 @@ class BI_Device final : public BI_Base, public AttributeProvider,
         bool getIsMirrored() const noexcept override {return mIsMirrored;}
         QPainterPath getGrabAreaScenePx() const noexcept override;
         void setSelected(bool selected) noexcept override;
+
+        // Inherited from IF_GraphicsLayerProvider
+        GraphicsLayer* getLayer(const QString& name) const noexcept override;
+        QList<GraphicsLayer*> getAllLayers() const noexcept override;
 
         // Operator Overloadings
         BI_Device& operator=(const BI_Device& rhs) = delete;

@@ -42,6 +42,7 @@ SOURCES += \
     boards/cmd/cmdboardpolygonadd.cpp \
     boards/cmd/cmdboardpolygonremove.cpp \
     boards/cmd/cmdboardremove.cpp \
+    boards/cmd/cmdboardstroketextremove.cpp \
     boards/cmd/cmdboardviaedit.cpp \
     boards/cmd/cmddeviceinstanceadd.cpp \
     boards/cmd/cmddeviceinstanceedit.cpp \
@@ -62,6 +63,7 @@ SOURCES += \
     boards/items/bi_netsegment.cpp \
     boards/items/bi_plane.cpp \
     boards/items/bi_polygon.cpp \
+    boards/items/bi_stroketext.cpp \
     boards/items/bi_via.cpp \
     circuit/circuit.cpp \
     circuit/cmd/cmdcomponentinstanceadd.cpp \
@@ -141,6 +143,7 @@ HEADERS += \
     boards/cmd/cmdboardpolygonadd.h \
     boards/cmd/cmdboardpolygonremove.h \
     boards/cmd/cmdboardremove.h \
+    boards/cmd/cmdboardstroketextremove.h \
     boards/cmd/cmdboardviaedit.h \
     boards/cmd/cmddeviceinstanceadd.h \
     boards/cmd/cmddeviceinstanceedit.h \
@@ -161,6 +164,7 @@ HEADERS += \
     boards/items/bi_netsegment.h \
     boards/items/bi_plane.h \
     boards/items/bi_polygon.h \
+    boards/items/bi_stroketext.h \
     boards/items/bi_via.h \
     circuit/circuit.h \
     circuit/cmd/cmdcomponentinstanceadd.h \

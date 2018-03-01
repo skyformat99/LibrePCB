@@ -17,51 +17,38 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef LIBREPCB_PROJECT_CMDMOVESELECTEDBOARDITEMS_H
-#define LIBREPCB_PROJECT_CMDMOVESELECTEDBOARDITEMS_H
+#ifndef LIBREPCB_PROJECT_CMDBOARDSTROKETEXTREMOVE_H
+#define LIBREPCB_PROJECT_CMDBOARDSTROKETEXTREMOVE_H
 
 /*****************************************************************************************
  *  Includes
  ****************************************************************************************/
 #include <QtCore>
-#include <librepcb/common/undocommandgroup.h>
-#include <librepcb/common/units/all_length_units.h>
+#include <librepcb/common/undocommand.h>
 
 /*****************************************************************************************
  *  Namespace / Forward Declarations
  ****************************************************************************************/
 namespace librepcb {
-
-class CmdPolygonEdit;
-class CmdStrokeTextEdit;
-
 namespace project {
 
 class Board;
-class CmdDeviceInstanceEdit;
-class CmdBoardViaEdit;
-class CmdBoardNetPointEdit;
-class CmdBoardPlaneEdit;
-
-namespace editor {
+class BI_StrokeText;
 
 /*****************************************************************************************
- *  Class CmdMoveSelectedBoardItems
+ *  Class CmdBoardStrokeTextRemove
  ****************************************************************************************/
 
 /**
- * @brief The CmdMoveSelectedBoardItems class
+ * @brief The CmdBoardStrokeTextRemove class
  */
-class CmdMoveSelectedBoardItems final : public UndoCommandGroup
+class CmdBoardStrokeTextRemove final : public UndoCommand
 {
     public:
 
         // Constructors / Destructor
-        CmdMoveSelectedBoardItems(Board& board, const Point& startPos) noexcept;
-        ~CmdMoveSelectedBoardItems() noexcept;
-
-        // General Methods
-        void setCurrentPosition(const Point& pos) noexcept;
+        explicit CmdBoardStrokeTextRemove(BI_StrokeText& text) noexcept;
+        ~CmdBoardStrokeTextRemove() noexcept;
 
 
     private:
@@ -71,27 +58,24 @@ class CmdMoveSelectedBoardItems final : public UndoCommandGroup
         /// @copydoc UndoCommand::performExecute()
         bool performExecute() override;
 
+        /// @copydoc UndoCommand::performUndo()
+        void performUndo() override;
+
+        /// @copydoc UndoCommand::performRedo()
+        void performRedo() override;
+
 
         // Private Member Variables
-        Board& mBoard;
-        Point mStartPos;
-        Point mDeltaPos;
 
-        // Move commands
-        QList<CmdDeviceInstanceEdit*> mDeviceEditCmds;
-        QList<CmdBoardViaEdit*> mViaEditCmds;
-        QList<CmdBoardNetPointEdit*> mNetPointEditCmds;
-        QList<CmdBoardPlaneEdit*> mPlaneEditCmds;
-        QList<CmdPolygonEdit*> mPolygonEditCmds;
-        QList<CmdStrokeTextEdit*> mStrokeTextEditCmds;
+        Board& mBoard;
+        BI_StrokeText& mText;
 };
 
 /*****************************************************************************************
  *  End of File
  ****************************************************************************************/
 
-} // namespace editor
 } // namespace project
 } // namespace librepcb
 
-#endif // LIBREPCB_PROJECT_CMDMOVESELECTEDBOARDITEMS_H
+#endif // LIBREPCB_PROJECT_CMDBOARDSTROKETEXTREMOVE_H

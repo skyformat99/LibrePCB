@@ -57,7 +57,7 @@ StrokeFont::~StrokeFont() noexcept
  ****************************************************************************************/
 
 QVector<Path> StrokeFont::stroke(const QString& text, const Length& height,
-                                 const Ratio& lineSpacing, const Alignment& align) const noexcept
+                                 const Ratio& lineSpacingFactor, const Alignment& align) const noexcept
 {
     QVector<Path> paths;
     Length totalWidth;
@@ -71,13 +71,14 @@ QVector<Path> StrokeFont::stroke(const QString& text, const Length& height,
         } else {
             pos.setX(lines.at(i).second / -2);
         }
+        Length lineSpacing = calcLineSpacing(height, lineSpacingFactor);
         if (align.getV() == VAlign::bottom()) {
-            pos.setY((lines.count() - i - 1) * height.toNm() * lineSpacing.toNormalized());
+            pos.setY(lineSpacing * (lines.count() - i - 1));
         } else if (align.getV() == VAlign::top()) {
-            pos.setY(-height.toNm() - i * height.toNm() * lineSpacing.toNormalized());
+            pos.setY(-height - lineSpacing * i);
         } else {
-            Length h = (lines.count() - i - 1) * height.toNm() * lineSpacing.toNormalized();
-            Length totalHeight(height.toNm() + (lines.count() - 1) * height.toNm() * lineSpacing.toNormalized());
+            Length h = lineSpacing * (lines.count() - i - 1);
+            Length totalHeight = height + lineSpacing * (lines.count() - 1);
             pos.setY(h - (totalHeight / 2));
         }
         foreach (const Path& p, lines.at(i).first) {
@@ -104,22 +105,24 @@ QVector<Path> StrokeFont::strokeLine(const QString& text, const Length& height,
                                      Length& width) const noexcept
 {
     QVector<Path> paths;
-    width = Length(0);
-    foreach (const QChar& c, text) {
-        if (c == ' ') {
-            width += height;
+    Length offset(0);
+    width = Length(0); // same as offset, but without last letter spacing
+    for (int i = 0; i < text.length(); ++i) {
+        if (text.at(i) == ' ') {
+            offset += calcWordSpacing(height);
+            width = offset;
         } else {
-            QVector<Path> glyphPaths = strokeGlyph(c, height);
-            foreach (const Path& p, glyphPaths) {
-                paths.append(p.translated(Point(width, Length(0))));
-            }
+            QVector<Path> glyphPaths = strokeGlyph(text.at(i), height);
+            if (glyphPaths.isEmpty()) continue; // don't add letter space for empty glyphs
             Point bottomLeft, topRight;
             computeBoundingRect(glyphPaths, bottomLeft, topRight);
-            width += topRight.getX();
-            width += (height * 3) / 10; // TODO
+            foreach (const Path& p, glyphPaths) {
+                paths.append(p.translated(Point(offset, Length(0))));
+            }
+            width = offset + topRight.getX().abs(); // same concept as in LibreCAD, even if not fully understood ;)
+            offset = width + calcLetterSpacing(height);
         }
     }
-    width -= (height * 3) / 10; // TODO
     return paths;
 }
 
@@ -161,6 +164,21 @@ const fb::GlyphListAccessor& StrokeFont::accessor() const noexcept
     return *mGlyphListAccessor;
 }
 
+Length StrokeFont::calcLetterSpacing(const Length& height) const noexcept
+{
+    return Length(height.toNm() * mFont->header.letterSpacing / 9);
+}
+
+Length StrokeFont::calcWordSpacing(const Length& height) const noexcept
+{
+    return Length(height.toNm() * mFont->header.wordSpacing / 9);
+}
+
+Length StrokeFont::calcLineSpacing(const Length& height, const Ratio& factor) const noexcept
+{
+    return Length(height.toNm() * mFont->header.lineSpacing * factor.toNormalized() / 9);
+}
+
 QVector<Path> StrokeFont::polylines2paths(const QVector<fontobene::Polyline>& polylines,
                                           const Length& height) noexcept
 {
@@ -176,19 +194,17 @@ Path StrokeFont::polyline2path(const fontobene::Polyline& p, const Length& heigh
 {
     Path path;
     for (int i = 0; i < p.size(); ++i) {
-        path.addVertex(vertex2point(p.at(i), height), vertex2angle(p.at((i + 1) % p.size())));
+        Vertex v = convertVertex(p.at(i), height);
+        Vertex v2 = convertVertex(p.at((i + 1) % p.size()), height);
+        path.addVertex(Vertex(v.getPos(), v2.getAngle()));
     }
     return path;
 }
 
-Point StrokeFont::vertex2point(const fb::Vertex& v, const Length& height) noexcept
+Vertex StrokeFont::convertVertex(const fb::Vertex& v, const Length& height) noexcept
 {
-    return Point::fromMm(v.scaledX(height.toMm()), v.scaledY(height.toMm()));
-}
-
-Angle StrokeFont::vertex2angle(const fb::Vertex& v) noexcept
-{
-    return Angle::fromDeg(v.scaledBulge(180));
+    return Vertex(Point::fromMm(v.scaledX(height.toMm()), v.scaledY(height.toMm())),
+                  Angle::fromDeg(v.scaledBulge(180)));
 }
 
 void StrokeFont::computeBoundingRect(const QVector<Path>& paths,

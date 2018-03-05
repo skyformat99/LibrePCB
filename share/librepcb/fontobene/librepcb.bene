@@ -8,6 +8,9 @@ id = librepcb
 author = Max Müller <max@example.com>
 version = 1.0
 license = GPL-3.0+
+letter_spacing = 3
+word_spacing = 6.75
+line_spacing = 15
 
 [user]
 comment = This is the official font used for LibrePCB projects.
@@ -894,6 +897,21 @@ comment = This is the official font used for LibrePCB projects.
 
 [02d8] ˘
 0,11.75;2.5,11.75,9
+
+[03a9] Ω
+0.0,0.0;2.5,0.0
+2.5,0.0;0.94,2.5
+0.94,2.5;0.31,4.37
+0.31,4.37;0.31,5.62
+0.31,5.62;0.94,7.18
+0.94,7.18;2.5,8.12
+2.5,8.12;5.63,8.12
+5.63,8.12;7.19,7.18
+7.19,7.18;7.81,5.62
+7.81,5.62;7.81,4.37
+7.81,4.37;7.19,2.5
+7.19,2.5;5.63,0.0
+5.63,0.0;8.13,0.0
 
 [0401] Ё
 @0045

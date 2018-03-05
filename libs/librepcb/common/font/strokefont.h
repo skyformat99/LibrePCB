@@ -58,8 +58,8 @@ class StrokeFont final : public QObject
         ~StrokeFont() noexcept;
 
         // General Methods
-        QVector<Path> stroke(const QString& text, const Length& height, const Ratio& lineSpacing,
-                             const Alignment& align) const noexcept;
+        QVector<Path> stroke(const QString& text, const Length& height,
+                             const Ratio& lineSpacingFactor, const Alignment& align) const noexcept;
         QVector<QPair<QVector<Path>, Length>> strokeLines(const QString& text,
                                                           const Length& height,
                                                           Length& width) const noexcept;
@@ -73,11 +73,13 @@ class StrokeFont final : public QObject
     private:
         void fontLoaded() noexcept;
         const fontobene::GlyphListAccessor& accessor() const noexcept;
+        Length calcLetterSpacing(const Length& height) const noexcept;
+        Length calcWordSpacing(const Length& height) const noexcept;
+        Length calcLineSpacing(const Length& height, const Ratio& factor) const noexcept;
         static QVector<Path> polylines2paths(const QVector<fontobene::Polyline>& polylines,
                                              const Length& height) noexcept;
         static Path polyline2path(const fontobene::Polyline& p, const Length& height) noexcept;
-        static Point vertex2point(const fontobene::Vertex& v, const Length& height) noexcept;
-        static Angle vertex2angle(const fontobene::Vertex& v) noexcept;
+        static Vertex convertVertex(const fontobene::Vertex& v, const Length& height) noexcept;
         static void computeBoundingRect(const QVector<Path>& paths,
                                         Point& bottomLeft, Point& topRight) noexcept;
 

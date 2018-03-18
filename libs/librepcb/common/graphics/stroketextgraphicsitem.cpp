@@ -25,7 +25,7 @@
 #include "stroketextgraphicsitem.h"
 #include "origincrossgraphicsitem.h"
 #include "../graphics/graphicslayer.h"
-#include "../font/strokefont.h"
+#include "../font/strokefontpool.h"
 #include "../application.h"
 #include "../toolbox.h"
 
@@ -121,14 +121,19 @@ void StrokeTextGraphicsItem::strokeTextMirroredChanged(bool mirrored) noexcept
 void StrokeTextGraphicsItem::updatePath() noexcept
 {
     setLineWidth(Length(mText.getHeight().toNm() * mText.getStrokeWidthRatio().toNormalized()));
-    QVector<Path> paths = qApp->getStrokeFont().stroke(mText.getText(), mText.getHeight(),
-        mText.getLineSpacingFactor(), mText.getAlign());
-    if (mText.getMirrored()) {
-        for (Path& p : paths) {
-            p.mirror(Qt::Horizontal);
+    try {
+        const StrokeFont& font = qApp->getStrokeFonts().getFont("librepcb.bene");
+        QVector<Path> paths = font.stroke(mText.getText(), mText.getHeight(),
+            mText.getLineSpacingFactor(), mText.getAlign());
+        if (mText.getMirrored()) {
+            for (Path& p : paths) {
+                p.mirror(Qt::Horizontal);
+            }
         }
+        setPath(Path::toQPainterPathPx(paths));
+    } catch (const Exception& e) {
+        qCritical() << "Failed to stroke font:" << e.getMsg();
     }
-    setPath(Path::toQPainterPathPx(paths));
 }
 
 /*****************************************************************************************

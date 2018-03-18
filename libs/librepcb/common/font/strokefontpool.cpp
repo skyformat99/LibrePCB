@@ -17,85 +17,58 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef LIBREPCB_APPLICATION_H
-#define LIBREPCB_APPLICATION_H
-
 /*****************************************************************************************
  *  Includes
  ****************************************************************************************/
 #include <QtCore>
-#include <QApplication>
-#include "version.h"
-#include "fileio/filepath.h"
+#include "strokefontpool.h"
+#include "../fileio/fileutils.h"
 
 /*****************************************************************************************
- *  Namespace / Forward Declarations
+ *  Namespace
  ****************************************************************************************/
 namespace librepcb {
 
-class StrokeFontPool;
-
 /*****************************************************************************************
- *  Macros
- ****************************************************************************************/
-#if defined(qApp)
-#undef qApp
-#endif
-#define qApp (Application::instance())
-
-/*****************************************************************************************
- *  Class Application
+ *  Constructors / Destructor
  ****************************************************************************************/
 
-/**
- * @brief The Application class extends the QApplication with the exception-save method
- *        #notify()
- *
- * @author ubruhin
- * @date 2014-10-23
- */
-class Application final : public QApplication
+StrokeFontPool::StrokeFontPool(const FilePath& directory) noexcept
 {
-        Q_OBJECT
+    try {
+        foreach (const FilePath& fp, FileUtils::getFilesInDirectory(directory, {"*.bene"})) {
+            try {
+                qDebug() << "Load stroke font:" << fp.getFilename();
+                mFonts.insert(fp.getFilename(), std::make_shared<StrokeFont>(fp)); // can throw
+            } catch (const Exception& e) {
+                qCritical() << "Failed to load stroke font" << fp.toNative() << ":" << e.getMsg();
+            }
+        }
+    } catch (const Exception& e) {
+        qCritical() << "Failed to load stroke font pool:" << e.getMsg();
+    }
+}
 
-    public:
+StrokeFontPool::~StrokeFontPool() noexcept
+{
+}
 
-        // Constructors / Destructor
-        Application() = delete;
-        Application(const Application& other) = delete;
-        Application(int& argc, char** argv) noexcept;
-        ~Application() noexcept;
+/*****************************************************************************************
+ *  Getters
+ ****************************************************************************************/
 
-        // Getters
-        const Version& getAppVersion() const noexcept {return mAppVersion;}
-        const QString& getGitVersion() const noexcept {return mGitVersion;}
-        const Version& getFileFormatVersion() const noexcept {return mFileFormatVersion;}
-        const FilePath& getResourcesDir() const noexcept {return mResourcesDir;}
-        FilePath getResourcesFilePath(const QString& filepath) const noexcept;
-        StrokeFontPool& getStrokeFonts() const noexcept {return *mStrokeFontPool;}
-
-        // Reimplemented from QApplication
-        bool notify(QObject* receiver, QEvent* e);
-
-        // Operator Overloadings
-        Application& operator=(const Application& rhs) = delete;
-
-        // Static Methods
-        static Application* instance() noexcept;
-
-
-    private: // Data
-        Version mAppVersion;
-        QString mGitVersion;
-        Version mFileFormatVersion;
-        FilePath mResourcesDir;
-        QScopedPointer<StrokeFontPool> mStrokeFontPool; ///< all application stroke fonts
-};
+const StrokeFont& StrokeFontPool::getFont(const QString& filename) const
+{
+    if (mFonts.contains(filename)) {
+        return *mFonts[filename];
+    } else {
+        throw RuntimeError(__FILE__, __LINE__,
+            QString(tr("The font \"%1\" does not exist in the font pool.")).arg(filename));
+    }
+}
 
 /*****************************************************************************************
  *  End of File
  ****************************************************************************************/
 
 } // namespace librepcb
-
-#endif // LIBREPCB_APPLICATION_H

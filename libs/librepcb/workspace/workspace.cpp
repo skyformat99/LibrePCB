@@ -59,12 +59,6 @@ Workspace::Workspace(const FilePath& wsPath) :
     mLibrariesPath(mMetadataPath.getPathTo("libraries")),
     mLock(mMetadataPath)
 {
-    // If not already done, trigger loading the application-wide stroke font now. This is
-    // required to make an exception thrown now if the font could not be loaded. Later in
-    // the graphics items of library and project editors we don't want exceptions as they
-    // are not propagated to the user.
-    qApp->getStrokeFont(); // can throw
-
     // check if the workspace is valid
     if (!isValidWorkspacePath(mPath)) {
         throw RuntimeError(__FILE__, __LINE__,

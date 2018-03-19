@@ -47,20 +47,24 @@ namespace project {
 BI_Footprint::BI_Footprint(BI_Device& device, const BI_Footprint& other) :
     BI_Base(device.getBoard()), mDevice(device)
 {
-    Q_UNUSED(other);
+    mTexts = other.mTexts;
     init();
 }
 
 BI_Footprint::BI_Footprint(BI_Device& device, const SExpression& node) :
     BI_Base(device.getBoard()), mDevice(device)
 {
-    Q_UNUSED(node);
+    mTexts.loadFromDomElement(node);
     init();
 }
 
 BI_Footprint::BI_Footprint(BI_Device& device) :
     BI_Base(device.getBoard()), mDevice(device)
 {
+    // copy all footprint texts (and keep original UUIDs for future identification)
+    for (const StrokeText& text : device.getLibFootprint().getTexts()) {
+        mTexts.append(std::make_shared<StrokeText>(text));
+    }
     init();
 }
 
@@ -95,8 +99,6 @@ void BI_Footprint::init()
             this, &BI_Footprint::deviceInstanceRotated);
     connect(&mDevice, &BI_Device::mirrored,
             this, &BI_Footprint::deviceInstanceMirrored);
-
-    if (!checkAttributesValidity()) throw LogicError(__FILE__, __LINE__);
 }
 
 BI_Footprint::~BI_Footprint() noexcept
@@ -166,12 +168,7 @@ void BI_Footprint::removeFromBoard()
 
 void BI_Footprint::serialize(SExpression& root) const
 {
-    if (!checkAttributesValidity()) throw LogicError(__FILE__, __LINE__);
-
-    Q_UNUSED(root);
-    //root.appendStringChild("uuid", mUuid);
-    //root.appendStringChild("gen_comp_instance", mComponentInstance->getUuid());
-    //root.appendStringChild("symbol_item", mSymbVarItem->getUuid());
+    mTexts.serialize(root);
 }
 
 /*****************************************************************************************
@@ -280,13 +277,6 @@ void BI_Footprint::updateGraphicsItemTransform() noexcept
     if (mDevice.getIsMirrored()) t.scale(qreal(-1), qreal(1));
     t.rotate(-mDevice.getRotation().toDeg());
     mGraphicsItem->setTransform(t);
-}
-
-bool BI_Footprint::checkAttributesValidity() const noexcept
-{
-    //if (mUuid.isNull())                 return false;
-    //if (mComponentInstance == nullptr)    return false;
-    return true;
 }
 
 /*****************************************************************************************

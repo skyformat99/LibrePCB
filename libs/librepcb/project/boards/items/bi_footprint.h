@@ -27,6 +27,7 @@
 #include "bi_base.h"
 #include <librepcb/common/fileio/serializableobject.h>
 #include <librepcb/common/attributes/attributeprovider.h>
+#include <librepcb/common/geometry/stroketext.h>
 #include "../graphicsitems/bgi_footprint.h"
 
 /*****************************************************************************************
@@ -76,6 +77,8 @@ class BI_Footprint final : public BI_Base, public SerializableObject,
         const QHash<Uuid, BI_FootprintPad*>& getPads() const noexcept {return mPads;}
         const library::Footprint& getLibFootprint() const noexcept;
         const Angle& getRotation() const noexcept;
+        const StrokeTextList& getTexts() const noexcept {return mTexts;}
+        StrokeTextList& getTexts() noexcept {return mTexts;}
         bool isSelectable() const noexcept override;
         bool isUsed() const noexcept;
 
@@ -105,7 +108,6 @@ class BI_Footprint final : public BI_Base, public SerializableObject,
 
 
     private slots:
-
         void deviceInstanceAttributesChanged();
         void deviceInstanceMoved(const Point& pos);
         void deviceInstanceRotated(const Angle& rot);
@@ -113,22 +115,19 @@ class BI_Footprint final : public BI_Base, public SerializableObject,
 
 
     signals:
-
         /// @copydoc AttributeProvider::attributesChanged()
         void attributesChanged() override;
 
 
     private:
-
         void init();
         void updateGraphicsItemTransform() noexcept;
-        bool checkAttributesValidity() const noexcept;
-
 
         // General
         BI_Device& mDevice;
         QScopedPointer<BGI_Footprint> mGraphicsItem;
         QHash<Uuid, BI_FootprintPad*> mPads; ///< key: footprint pad UUID
+        StrokeTextList mTexts;
 };
 
 /*****************************************************************************************

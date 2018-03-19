@@ -224,7 +224,7 @@ void BI_StrokeText::updatePaths() noexcept
         }
         mGraphicsItem->setPath(Path::toQPainterPathPx(mPaths));
     } catch (const Exception& e) {
-        qCritical() << "Failed to stroke font:" << e.getMsg();
+        qCritical() << "Failed to draw text:" << e.getMsg();
     }
 }
 

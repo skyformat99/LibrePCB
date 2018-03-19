@@ -49,12 +49,12 @@ BGI_Footprint::BGI_Footprint(BI_Footprint& footprint) noexcept :
     updateCacheAndRepaint();
 
     // texts
-    for (const StrokeText& text : mLibFootprint.getTexts()) {
+    /*for (const StrokeText& text : mLibFootprint.getTexts()) {
         //QString str = AttributeSubstitutor::substitute(text.getText(), &mFootprint);
         StrokeTextGraphicsItem* item = new StrokeTextGraphicsItem(
             const_cast<StrokeText&>(text), mFootprint.getDeviceInstance(), this);
         Q_UNUSED(item);
-    }
+    }*/
 }
 
 BGI_Footprint::~BGI_Footprint() noexcept

@@ -25,8 +25,9 @@
 #include "../board.h"
 #include "../boardlayerstack.h"
 #include "../../project.h"
+#include <librepcb/common/font/strokefontpool.h>
 #include <librepcb/common/graphics/graphicsscene.h>
-#include <librepcb/common/graphics/stroketextgraphicsitem.h>
+#include <librepcb/common/graphics/primitivepathgraphicsitem.h>
 #include <librepcb/common/geometry/stroketext.h>
 
 /*****************************************************************************************
@@ -50,7 +51,8 @@ BI_StrokeText::BI_StrokeText(Board& board, const SExpression& node) :
     BI_Base(board)
 {
     mText.reset(new StrokeText(node));
-    init();
+    init();    //setLineWidth(Length(mText.getHeight().toNm() * mText.getStrokeWidthRatio().toNormalized()));
+
 }
 
 BI_StrokeText::BI_StrokeText(Board& board, const StrokeText& text) :
@@ -70,8 +72,16 @@ BI_StrokeText::BI_StrokeText(Board& board, const StrokeText& text) :
 
 void BI_StrokeText::init()
 {
-    mGraphicsItem.reset(new StrokeTextGraphicsItem(*mText, mBoard.getLayerStack()));
+    mGraphicsItem.reset(new PrimitivePathGraphicsItem());
+    mGraphicsItem->setPosition(mText->getPosition());
+    mGraphicsItem->setRotation(mText->getRotation());
+    mGraphicsItem->setLineLayer(mBoard.getLayerStack().getLayer(mText->getLayerName()));
+    mGraphicsItem->setLineWidth(mText->calcStrokeWidth());
+    mGraphicsItem->setFlag(QGraphicsItem::ItemIsSelectable, true);
     mGraphicsItem->setZValue(Board::ZValue_Default);
+
+    // register to the text to get attribute updates
+    mText->registerObserver(*this);
 
     // connect to the "attributes changed" signal of the board
     connect(&mBoard, &Board::attributesChanged, this, &BI_StrokeText::boardAttributesChanged);
@@ -79,6 +89,7 @@ void BI_StrokeText::init()
 
 BI_StrokeText::~BI_StrokeText() noexcept
 {
+    mText->unregisterObserver(*this);
     mGraphicsItem.reset();
     mText.reset();
 }
@@ -140,7 +151,81 @@ void BI_StrokeText::setSelected(bool selected) noexcept
 
 void BI_StrokeText::boardAttributesChanged()
 {
-    mGraphicsItem->update();
+    updatePaths();
+}
+
+/*****************************************************************************************
+ *  Private Methods
+ ****************************************************************************************/
+
+void BI_StrokeText::strokeTextLayerNameChanged(const QString& newLayerName) noexcept
+{
+    mGraphicsItem->setLineLayer(mBoard.getLayerStack().getLayer(newLayerName));
+}
+
+void BI_StrokeText::strokeTextTextChanged(const QString& newText) noexcept
+{
+    Q_UNUSED(newText);
+    updatePaths();
+}
+
+void BI_StrokeText::strokeTextPositionChanged(const Point& newPos) noexcept
+{
+    mGraphicsItem->setPosition(newPos);
+}
+
+void BI_StrokeText::strokeTextRotationChanged(const Angle& newRot) noexcept
+{
+    mGraphicsItem->setRotation(newRot);
+}
+
+void BI_StrokeText::strokeTextHeightChanged(const Length& newHeight) noexcept
+{
+    Q_UNUSED(newHeight);
+    mGraphicsItem->setLineWidth(mText->calcStrokeWidth());
+    updatePaths();
+}
+
+void BI_StrokeText::strokeTextStrokeWidthRatioChanged(const Ratio& ratio) noexcept
+{
+    Q_UNUSED(ratio);
+    mGraphicsItem->setLineWidth(mText->calcStrokeWidth());
+    updatePaths();
+}
+
+void BI_StrokeText::strokeTextLineSpacingFactorChanged(const Ratio& factor) noexcept
+{
+    Q_UNUSED(factor);
+    updatePaths();
+}
+
+void BI_StrokeText::strokeTextAlignChanged(const Alignment& newAlign) noexcept
+{
+    Q_UNUSED(newAlign);
+    updatePaths();
+}
+
+void BI_StrokeText::strokeTextMirroredChanged(bool mirrored) noexcept
+{
+    Q_UNUSED(mirrored);
+    updatePaths();
+}
+
+void BI_StrokeText::updatePaths() noexcept
+{
+    try {
+        const StrokeFont& font = getProject().getStrokeFonts().getFont("librepcb.bene"); // can throw
+        mPaths = font.stroke(mText->getText(), mText->getHeight(),
+            mText->getLineSpacingFactor(), mText->getAlign());
+        if (mText->getMirrored()) {
+            for (Path& p : mPaths) {
+                p.mirror(Qt::Horizontal);
+            }
+        }
+        mGraphicsItem->setPath(Path::toQPainterPathPx(mPaths));
+    } catch (const Exception& e) {
+        qCritical() << "Failed to stroke font:" << e.getMsg();
+    }
 }
 
 /*****************************************************************************************

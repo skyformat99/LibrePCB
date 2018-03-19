@@ -98,6 +98,7 @@ class StrokeText final : public SerializableObject
         const Alignment& getAlign() const noexcept {return mAlign;}
         bool getMirrored() const noexcept {return mMirrored;}
         const QString& getText() const noexcept {return mText;}
+        Length calcStrokeWidth() const noexcept;
 
         // Setters
         void setLayerName(const QString& name) noexcept;

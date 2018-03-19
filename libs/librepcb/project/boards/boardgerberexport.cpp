@@ -41,6 +41,7 @@
 #include "items/bi_netline.h"
 #include "items/bi_plane.h"
 #include "items/bi_polygon.h"
+#include "items/bi_stroketext.h"
 
 /*****************************************************************************************
  *  Namespace
@@ -226,6 +227,18 @@ void BoardGerberExport::drawLayer(GerberGenerator& gen, const QString& layerName
             gen.drawPathOutline(polygon->getPolygon().getPath(), lineWidth);
         }
     }
+
+    // draw stroke texts
+    foreach (const BI_StrokeText* text, mBoard.getStrokeTexts()) { Q_ASSERT(text);
+        if (layerName == text->getText().getLayerName()) {
+            Length lineWidth = calcWidthOfLayer(text->getText().calcStrokeWidth(), layerName);
+            foreach (Path path, text->getPaths()) {
+                path.rotate(text->getText().getRotation());
+                path.translate(text->getText().getPosition());
+                gen.drawPathOutline(path, lineWidth);
+            }
+        }
+    }
 }
 
 void BoardGerberExport::drawVia(GerberGenerator& gen, const BI_Via& via, const QString& layerName) const
@@ -299,12 +312,13 @@ void BoardGerberExport::drawFootprint(GerberGenerator& gen, const BI_Footprint& 
         }
     }
 
-    // TODO: draw texts
-
     // draw holes
     for (const Hole& hole : footprint.getLibFootprint().getHoles()) {
         gen.flashCircle(footprint.mapToScene(hole.getPosition()), hole.getDiameter(), Length(0));
     }
+
+    // Note: Stroke texts of footprints are not drawn here because they are also available
+    // as separate BI_StrokeText objects which are already drawn in drawLayer() above.
 }
 
 void BoardGerberExport::drawFootprintPad(GerberGenerator& gen, const BI_FootprintPad& pad, const QString& layerName) const

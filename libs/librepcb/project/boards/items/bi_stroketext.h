@@ -27,14 +27,15 @@
 #include "bi_base.h"
 #include <librepcb/common/uuid.h>
 #include <librepcb/common/fileio/serializableobject.h>
+#include <librepcb/common/geometry/stroketext.h>
+#include <librepcb/common/geometry/path.h>
 
 /*****************************************************************************************
  *  Namespace / Forward Declarations
  ****************************************************************************************/
 namespace librepcb {
 
-class StrokeText;
-class StrokeTextGraphicsItem;
+class PrimitivePathGraphicsItem;
 
 namespace project {
 
@@ -48,7 +49,8 @@ class Board;
 /**
  * @brief The BI_StrokeText class
  */
-class BI_StrokeText final : public BI_Base, public SerializableObject
+class BI_StrokeText final : public BI_Base, public SerializableObject,
+                            public IF_StrokeTextObserver
 {
         Q_OBJECT
 
@@ -67,6 +69,7 @@ class BI_StrokeText final : public BI_Base, public SerializableObject
         // Getters
         StrokeText& getText() noexcept {return *mText;}
         const StrokeText& getText() const noexcept {return *mText;}
+        const QVector<Path>& getPaths() const noexcept {return mPaths;}
         bool isSelectable() const noexcept override;
 
         // General Methods
@@ -88,17 +91,30 @@ class BI_StrokeText final : public BI_Base, public SerializableObject
 
 
     private slots:
-
         void boardAttributesChanged();
 
 
     private:
+        // Inherited from IF_StrokeTextObserver
+        void strokeTextLayerNameChanged(const QString& newLayerName) noexcept override;
+        void strokeTextTextChanged(const QString& newText) noexcept override;
+        void strokeTextPositionChanged(const Point& newPos) noexcept override;
+        void strokeTextRotationChanged(const Angle& newRot) noexcept override;
+        void strokeTextHeightChanged(const Length& newHeight) noexcept override;
+        void strokeTextStrokeWidthRatioChanged(const Ratio& ratio) noexcept override;
+        void strokeTextLineSpacingFactorChanged(const Ratio& factor) noexcept override;
+        void strokeTextAlignChanged(const Alignment& newAlign) noexcept override;
+        void strokeTextMirroredChanged(bool mirrored) noexcept override;
+
+        // Private Methods
         void init();
+        void updatePaths() noexcept;
 
 
         // General
         QScopedPointer<StrokeText> mText;
-        QScopedPointer<StrokeTextGraphicsItem> mGraphicsItem;
+        QVector<Path> mPaths;
+        QScopedPointer<PrimitivePathGraphicsItem> mGraphicsItem;
 };
 
 /*****************************************************************************************
